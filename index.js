@@ -39,19 +39,30 @@ const canvas = document.getElementById('board');
 canvas.width = GRID_W * CELL; canvas.height = GRID_H * CELL;
 const ctx = canvas.getContext('2d');
 
+
 function createBoard() { return Array.from({length: GRID_H}, () => Array(GRID_W).fill('')); }
 function drawBoard(board) {
   ctx.fillStyle = '#222'; ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.strokeStyle = 'var(--grid)'; ctx.lineWidth = 1;
   ctx.font = `bold ${CELL*0.6}px Courier`; ctx.textAlign = 'center'; ctx.textBaseline='middle';
+  
+  // Debug log to see if the board contains any letters
+  console.log('Drawing board with data:', board.flat().filter(ch => ch !== '').length, 'letters placed');
+  
   for (let r=0;r<GRID_H;r++) for(let c=0;c<GRID_W;c++){
     const x=c*CELL,y=r*CELL; ctx.strokeRect(x,y,CELL,CELL);
     const ch=board[r][c];
-    if(ch){ ctx.fillStyle='var(--tile)'; ctx.fillRect(x+1,y+1,CELL-2,CELL-2);
-      ctx.fillStyle='var(--tile-text)'; ctx.fillText(ch.toUpperCase(),x+CELL/2,y+CELL/2+1);
+    if(ch){ 
+      // Debug individual cell
+      console.log(`Drawing "${ch}" at [${r},${c}]`);
+      // Keep same background as grid but use light gray text
+      ctx.fillStyle='#ccc'; ctx.fillText(ch.toUpperCase(),x+CELL/2,y+CELL/2+1);
     }
   }
 }
+
+/* NEW – paint an empty grid immediately */
+drawBoard(createBoard());
 
 // ───────────────────────────── Hand (stack) ─────────────────────────────
 const handStack = []; // array acts as stack (push/pop)
@@ -152,14 +163,14 @@ function solve() {
   function backtrack(currBoard, currBag, depth) {
     const remaining = [...currBag.values()].reduce((a, b) => a + b, 0);
 
-    // record “best so far”
+    // record "best so far"
     if (remaining < bestLeft) {
       bestLeft  = remaining;
       bestBoard = deepCopyBoard(currBoard);
       console.log(' '.repeat(depth * 2) + `★ new best (${bestLeft} left)`);
       if (bestLeft === 0) foundPerfect = true; // early exit allowed later
     }
-    if (foundPerfect) return;                 // don’t waste time once perfect
+    if (foundPerfect) return;                 // don't waste time once perfect
 
     // choose next longest word that still fits in the bag
     for (const word of candidates) {
@@ -204,6 +215,8 @@ function solve() {
   }
 
   // ───── final drawing ─────
+  console.log('Best board solution:', bestBoard);
+  console.log('Letters placed on best board:', bestBoard.flat().filter(ch => ch !== '').length);
   drawBoard(bestBoard);
   if (bestLeft === 0) {
     console.log('%cSolved perfectly!', 'color:lime;font-weight:bold');
